@@ -148,31 +148,40 @@ class MainWindow(QMainWindow):
     def ask_for_steam_path(self):
         QMessageBox.information(
             self,
-            "Вкажіть шлях до Steam",
-            "Будь ласка, вкажіть папку, де встановлений Steam.\n"
-            "Наприклад: C:\\Program Files (x86)\\Steam"
+            "Вкажіть шлях до Steam або гри",
+            "Будь ласка, вкажіть або кореневу теку Steam (де лежить steam.exe), "
+            "або теку, де встановлений Warhammer 40,000 DARKTIDE.\n\n"
+            "Приклади:\n"
+            "C:\\Program Files (x86)\\Steam\n"
+            "D:\\SteamLibrary\\steamapps\\common\\Warhammer 40,000 DARKTIDE"
         )
 
         while True:
-            path = QFileDialog.getExistingDirectory(self, "Виберіть папку Steam")
+            path = QFileDialog.getExistingDirectory(self, "Виберіть теку Steam або Darktide")
             if not path:
                 QMessageBox.critical(self, "Помилка", "Не вказано шлях до Steam")
                 sys.exit(1)
 
-            # перевіряємо наявність Darktide
-            game_path = os.path.join(path, "steamapps", "common", "Warhammer 40,000 DARKTIDE")
-            if not os.path.exists(game_path):
-                QMessageBox.warning(
-                    self,
-                    "Не знайдено Darktide",
-                    "У вибраній директорії не знайдено Darktide.\n"
-                    "Виберіть іншу папку, де встановлена гра."
-                )
-                continue
+            # --- Варіант 1: користувач вибрав теку гри
+            if os.path.basename(path).lower() == "warhammer 40,000 darktide":
+                self.steam_path = os.path.dirname(os.path.dirname(os.path.dirname(path)))
+                self.settings.setValue("steam_path", self.steam_path)
+                break
 
-            self.steam_path = path
-            self.settings.setValue("steam_path", self.steam_path)
-            break
+            # --- Варіант 2: користувач вибрав теку Steam
+            game_path = os.path.join(path, "steamapps", "common", "Warhammer 40,000 DARKTIDE")
+            if os.path.exists(game_path):
+                self.steam_path = path
+                self.settings.setValue("steam_path", self.steam_path)
+                break
+
+            # --- Якщо гра не знайдена
+            QMessageBox.warning(
+                self,
+                "Не знайдено Darktide",
+                "У вибраній директорії не знайдено Darktide.\n"
+                "Виберіть або теку Steam, або теку самої гри."
+            )
 
 
     # --- Вибір toggle_darktide_mods.bat ---
